@@ -42,7 +42,7 @@ module.exports = {
   updateThought(req, res) {
     console.log(req.body);
     Thought.findOneAndUpdate(
-      { _id: req.params.studentId },
+      { _id: req.params.thoughtId },
       { thoughtText: req.body.thoughtText },
       { new: true }
     )
@@ -58,7 +58,7 @@ module.exports = {
 
   // Delete a Thought
   deleteThought(req, res) {
-    Thought.findOneAndRemove({ _id: req.params.studentId })
+    Thought.findOneAndRemove({ _id: req.params.thoughtId })
       .then((thought) =>
         !thought
           ? res.status(404).json({ message: "No such thought exists" })
@@ -77,7 +77,7 @@ module.exports = {
     console.log("You are adding a Reaction! How Cool!");
     console.log(req.body);
     Thought.findOneAndUpdate(
-      { _id: req.params.studentId },
+      { _id: req.params.thoughtId },
       { $addToSet: { reactions: req.body } },
       { runValidators: true, new: true }
     )
@@ -93,7 +93,7 @@ module.exports = {
   // Remove assignment from a student
   removeReaction(req, res) {
     Thought.findOneAndUpdate(
-      { _id: req.params.studentId },
+      { _id: req.params.thoughtId },
       { $pull: { reactions: { reactionId: req.params.reactionId } } },
       { runValidators: true, new: true }
     )
