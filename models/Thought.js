@@ -5,26 +5,31 @@ const formatDate = (date) => {
   return newDate.toDateString();
 };
 
-const reactionSchema = new Schema({
-  reactionId: {
-    type: Schema.Types.ObjectId,
-    default: () => new Types.ObjectId(),
+const reactionSchema = new Schema(
+  {
+    reactionId: {
+      type: Schema.Types.ObjectId,
+      default: () => new Types.ObjectId(),
+    },
+    reactionBody: {
+      type: String,
+      required: true,
+      maxlength: 280,
+    },
+    username: {
+      type: String,
+      required: true,
+    },
+    createdAt: {
+      type: String,
+      default: Date,
+      get: (timestamp) => formatDate(timestamp),
+    },
   },
-  reactionBody: {
-    type: String,
-    required: true,
-    maxlength: 280,
-  },
-  username: {
-    type: String,
-    required: true,
-  },
-  createdAt: {
-    type: String,
-    default: Date,
-    get: formatDate,
-  },
-});
+  {
+    timestamps: true,
+  }
+);
 
 const thoughtSchema = new Schema(
   {
@@ -37,7 +42,7 @@ const thoughtSchema = new Schema(
     createdAt: {
       type: String,
       default: Date,
-      get: formatDate,
+      get: (timestamp) => formatDate(timestamp),
     },
     username: {
       type: String,
@@ -46,6 +51,7 @@ const thoughtSchema = new Schema(
     reactions: [reactionSchema],
   },
   {
+    timestamps: true,
     toJSON: {
       virtuals: true,
     },
