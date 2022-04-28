@@ -1,9 +1,10 @@
-const { Course, Student, User } = require("../models");
+const { User, Thought } = require("../models");
 
 module.exports = {
   // Get all users
   getUsers(req, res) {
     User.find()
+      .populate("thoughts")
       .then((users) => res.json(users))
       .catch((err) => res.status(500).json(err));
   },
@@ -46,11 +47,27 @@ module.exports = {
   },
   // Delete a User
   deleteUser(req, res) {
-    User.findOneAndDelete({ _id: req.params.userId })
-      .then((course) =>
-        !course
+    User.findOne({ _id: req.params.userId })
+      .then((user) =>
+        !user
           ? res.status(404).json({ message: "No user with that ID" })
-          : res.json({ message: "User deleted! HE'S OUTTA HERE!!!" })
+          : Thought.deleteMany({ username: user.username }).then((thought) =>
+              !thought
+                ? res.status(404).json({
+                    message:
+                      "An error occured deleting the users thoughts, please try again",
+                  })
+                : User.findOneAndDelete({ _id: req.params.userId }).then(
+                    (user) =>
+                      !user
+                        ? res
+                            .status(404)
+                            .json({ message: "No user with that ID" })
+                        : res.json({
+                            message: "User and associated thoughts deleted!",
+                          })
+                  )
+            )
       )
       .catch((err) => res.status(500).json(err));
   },
@@ -60,27 +77,54 @@ module.exports = {
     console.log(req.body);
     User.findOneAndUpdate(
       { _id: req.params.userId },
-      { $addToSet: { friends: req.body } },
+      { $addToSet: { friends: req.params.friendId } },
       { new: true }
     )
       .then((user) =>
         !user
           ? res.status(404).json({ message: "No user found with that ID :(" })
-          : res.json(thought)
+          : User.findOneAndUpdate(
+              { _id: req.params.friendId },
+              { $addToSet: { friends: req.params.userId } },
+              { new: true }
+            ).then((user) =>
+              !user
+                ? res.status(404).json({
+                    message:
+                      "There was a problem adding you as a friend, your friends list is accurate but not your friends.",
+                  })
+                : res.json({
+                    message: "This is the start of a beautiful friendship!",
+                  })
+            )
       )
       .catch((err) => res.status(500).json(err));
   },
   // Remove a Friend :(
   removeFriend(req, res) {
+    console.log("DELETING A FRIEND!! D:<");
     User.findOneAndUpdate(
       { _id: req.params.userId },
-      { $pull: { friends: { _id: req.params.friendId } } },
+      { $pull: { friends: req.params.friendId } },
       { new: true }
     )
       .then((user) =>
         !user
           ? res.status(404).json({ message: "No user found with that ID :(" })
-          : res.json(user)
+          : User.findOneAndUpdate(
+              { _id: req.params.friendId },
+              { $pull: { friends: req.params.userId } },
+              { new: true }
+            ).then((user) =>
+              !user
+                ? res.status(404).json({
+                    message:
+                      "There was a problem adding you as a friend, your friends list is accurate but not your friends.",
+                  })
+                : res.json({
+                    message: "Oh no! How sad! :(",
+                  })
+            )
       )
       .catch((err) => res.status(500).json(err));
   },

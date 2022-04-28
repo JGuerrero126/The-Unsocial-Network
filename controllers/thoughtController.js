@@ -1,5 +1,4 @@
-const { ObjectId } = require("mongoose").Types;
-const { User, Thought } = require("../models");
+const { Thought, User } = require("../models");
 
 module.exports = {
   // Get all Thoughts
@@ -35,15 +34,31 @@ module.exports = {
   // create a new Thought
   createThought(req, res) {
     Thought.create(req.body)
-      .then((thought) => res.json(thought))
-      .catch((err) => res.status(500).json(err));
+      .then((thought) =>
+        !thought
+          ? res
+              .status(404)
+              .json({ message: "An error occured please try again!" })
+          : User.findOneAndUpdate(
+              { username: thought.username },
+              { $addToSet: { thoughts: thought._id } },
+              { new: true }
+            ).then((user) =>
+              !user
+                ? res
+                    .status(404)
+                    .json({ message: "No user found! Please try again!" })
+                : res.json(user)
+            )
+      )
+      .catch((err) => console.log(err));
   },
 
   updateThought(req, res) {
     console.log(req.body);
     Thought.findOneAndUpdate(
       { _id: req.params.thoughtId },
-      { thoughtText: req.body.thoughtText },
+      { $set: req.body },
       { new: true }
     )
       .then((thought) =>
@@ -79,7 +94,7 @@ module.exports = {
     Thought.findOneAndUpdate(
       { _id: req.params.thoughtId },
       { $addToSet: { reactions: req.body } },
-      { runValidators: true, new: true }
+      { new: true }
     )
       .then((thought) =>
         !thought
@@ -95,7 +110,7 @@ module.exports = {
     Thought.findOneAndUpdate(
       { _id: req.params.thoughtId },
       { $pull: { reactions: { reactionId: req.params.reactionId } } },
-      { runValidators: true, new: true }
+      { new: true }
     )
       .then((thought) =>
         !thought
